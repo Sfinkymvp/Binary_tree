@@ -63,7 +63,7 @@ static void openDumpFile(BinaryTree* tree)
 }
 
 
-static TreeStatus nodeVerify(BinaryTree* tree, Node* node, int* object_count)
+static TreeStatus nodeVerify(BinaryTree* tree, Node* node)
 {
     assert(node);
 
@@ -74,15 +74,14 @@ static TreeStatus nodeVerify(BinaryTree* tree, Node* node, int* object_count)
     if (node->parent->left != node && node->parent->right != node)
         return TREE_PARENT_CHILD_MISMATCH;
 
-    (*object_count)++; 
     TreeStatus status = TREE_OK;
     if (node->left == NULL && node->right == NULL) {
         return TREE_OK;
     } else if (node->left != NULL && node->right != NULL) {
-        status = nodeVerify(tree, node->left, object_count);
+        status = nodeVerify(tree, node->left);
         if (status != TREE_OK)
             return status;
-        status = nodeVerify(tree, node->right, object_count);
+        status = nodeVerify(tree, node->right);
         if (status != TREE_OK)
             return status;
         return TREE_OK;
@@ -103,19 +102,16 @@ TreeStatus treeVerify(BinaryTree* tree)
     if (tree->root->data == NULL)
         return TREE_NULL_DATA_POINTER;
 
-    int object_count = 0;
     if (tree->root->left) {
-        status = nodeVerify(tree, tree->root->left, &object_count);
+        status = nodeVerify(tree, tree->root->left);
         if (status != TREE_OK)
             return status;
     }
     if (tree->root->right) {
-        status = nodeVerify(tree, tree->root->right, &object_count);
+        status = nodeVerify(tree, tree->root->right);
         if (status != TREE_OK)
             return status;
     }
-    //if (tree->count != object_count)
-    //    return TREE_INVALID_COUNT;
 
     return TREE_OK;
 }
@@ -125,20 +121,22 @@ static TreeStatus akinatorAddElement(BinaryTree* tree, Node* node, char* new_dat
 {
     assert(tree); assert(node); assert(new_data); assert(different_data);
 
-    TreeStatus status = createNode(tree, &node->left);
+    TREE_DUMP(tree, TREE_OK, "Before add new object");
+
+    TreeStatus status = createNode(&node->left);
     RETURN_IF_NOT_OK(status);
     node->left->data = strdup(new_data);
     if (node->left->data == NULL)
         return TREE_OUT_OF_MEMORY;
 
-    TREE_DUMP(tree, TREE_OK, "between add and remove");
+    TREE_DUMP(tree, TREE_OK, "After add new object");
 
-    status = createNode(tree, &node->right);
+    status = createNode(&node->right);
     RETURN_IF_NOT_OK(status);
     node->right->data = node->data;
     node->right->is_dynamic = node->is_dynamic;
 
-    TREE_DUMP(tree, TREE_OK, "between add and remove");
+    TREE_DUMP(tree, TREE_OK, "After move old object");
 
     node->data = strdup(different_data);
     node->is_dynamic = true;
@@ -173,6 +171,7 @@ static TreeStatus processWrongGuess(BinaryTree* tree, Node* node)
     char answer_buffer[BUFFER_SIZE] = {};
     char difference_buffer[BUFFER_SIZE] = {};
 
+    printf("What is it?\n");
     TreeStatus status = readUserAnswer(answer_buffer, BUFFER_SIZE);
     RETURN_IF_NOT_OK(status);
 
@@ -186,7 +185,7 @@ static TreeStatus processWrongGuess(BinaryTree* tree, Node* node)
         return TREE_RESTART;
     }        
 
-    printf("How is '%s' different from '%s'\n", answer_buffer, node->data);
+    printf("How is '%s' different from '%s'?\n", answer_buffer, node->data);
     status = readUserAnswer(difference_buffer, BUFFER_SIZE);
     RETURN_IF_NOT_OK(status);
 
@@ -203,7 +202,7 @@ static TreeStatus akinatorGuessing(BinaryTree* tree, Node* node)
 
     char answer_buffer[BUFFER_SIZE] = {};
 
-    printf("Is this %s?\n", node->data);
+    printf("Maybe it is %s?\n", node->data);
     TreeStatus status = readUserAnswer(answer_buffer, BUFFER_SIZE);
     RETURN_IF_NOT_OK(status);
     
@@ -241,7 +240,7 @@ TreeStatus akinatorStart(BinaryTree* tree)
 
     TreeStatus status = TREE_OK;
     if (tree->root == NULL) {
-        status = createNode(tree, &tree->root);
+        status = createNode(&tree->root);
         RETURN_IF_NOT_OK(status);
         
         tree->root->parent = NULL;   
@@ -260,7 +259,7 @@ TreeStatus akinatorStart(BinaryTree* tree)
 }
 
 
-TreeStatus createNode(BinaryTree* tree, Node** node)
+TreeStatus createNode(Node** node)
 {
     assert(node);
 
@@ -268,7 +267,6 @@ TreeStatus createNode(BinaryTree* tree, Node** node)
     if (*node == NULL)
         return TREE_OUT_OF_MEMORY;
     (*node)->is_dynamic = true;
-    tree->count++;
 
     return TREE_OK;
 }
@@ -279,7 +277,6 @@ TreeStatus treeConstructor(BinaryTree* tree)
     assert(tree != NULL);
 
     tree->root = NULL;
-    tree->count = 0; 
 
     TreeStatus status = treeLoadFromDisk(tree);
     RETURN_IF_NOT_OK(status);

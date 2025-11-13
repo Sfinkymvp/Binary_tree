@@ -59,7 +59,7 @@ TreeStatus treeVerify(BinaryTree* tree);
 TreeStatus akinatorStart(BinaryTree* tree);
 
 
-TreeStatus createNode(BinaryTree* tree, Node** node);
+TreeStatus createNode(Node** node);
 
 
 TreeStatus treeConstructor(BinaryTree* tree);

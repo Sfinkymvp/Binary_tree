@@ -36,7 +36,7 @@ TreeStatus treeWriteToDisk(BinaryTree* tree)
 {
     TREE_VERIFY(tree, "Before write tree to disk");
 
-    FILE* output_file = fopen("tree_out", "w");
+    FILE* output_file = fopen("tree_inout", "w");
     if (output_file == NULL)
         return TREE_OUTPUT_FILE_OPEN_ERROR;
 
@@ -90,6 +90,7 @@ TreeStatus treeLoadFromDisk(BinaryTree* tree)
         return TREE_INPUT_FILE_READ_ERROR;
     }
 
+    printf("BUFFER DUMP\n");
     int position = 0;    
     TreeStatus status = readNode(tree, &tree->root, &position);
     if (status != TREE_OK) {
@@ -141,11 +142,15 @@ TreeStatus readNode(BinaryTree* tree, Node** node, int* position)
 
     skipWhitespaces(tree->buffer, position);
 
+    for (int index = 0; index < 60; index++)
+        printf("_");
+    printf("\n");
+
     printf("%s", tree->buffer + *position);
 
     TreeStatus status = TREE_OK;
     if (tree->buffer[*position] == '(') {
-        status = createNode(tree, node);
+        status = createNode(node);
         RETURN_IF_NOT_OK(status);
         (*position)++;
 

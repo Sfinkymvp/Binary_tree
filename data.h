@@ -80,7 +80,6 @@ struct Node {
 typedef struct {
     Node* root;
     char* buffer;
-    int count;
 #ifdef DEBUG
     TreeDebugInfo debug;
 #endif // DEBUG
