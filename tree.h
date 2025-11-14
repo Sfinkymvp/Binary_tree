@@ -4,6 +4,7 @@
 
 #include "data.h"
 #include "tree_io.h"
+#include "tree_comparison.h"
 
 
 #ifdef DEBUG
@@ -62,10 +63,10 @@ TreeStatus akinatorStart(BinaryTree* tree);
 TreeStatus createNode(Node** node);
 
 
-TreeStatus treeConstructor(BinaryTree* tree);
+TreeStatus treeConstructor(BinaryTree* tree, const int argc, const char** argv);
 
 
-void treeDestructor(BinaryTree* tree);
+TreeStatus treeDestructor(BinaryTree* tree);
 
 
 #endif // _TREE_H_

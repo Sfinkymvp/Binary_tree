@@ -5,16 +5,17 @@
 
 
 #include "tree.h"
-#include "data.h"
 
 
 const char* UNKNOWN_STRING = "unknown";
+const char* DEFAULT_INPUT_FILE = "akinator_tree";
+const char* DEFAULT_OUTPUT_FILE = "akinator_tree";
 
 
 const char* status_messages[] = {
     GENERATE_STATUS_MESSAGE(TREE_OK, "Tree is valid"),
     GENERATE_STATUS_MESSAGE(TREE_RESTART, "Akinator will be restarted"),
-    GENERATE_STATUS_MESSAGE(TREE_ERR, "Tree is not valid"),
+    GENERATE_STATUS_MESSAGE(TREE_NOT_FOUND, "Object is not in the tree"),
     GENERATE_STATUS_MESSAGE(TREE_NULL_DATA_POINTER, "Node data is NULL"),
     GENERATE_STATUS_MESSAGE(TREE_ROOT_HAS_PARENT, "Root node has parent (must be NULL)"),
     GENERATE_STATUS_MESSAGE(TREE_MISSING_PARENT, "Node has no parent (must have)"),
@@ -28,7 +29,9 @@ const char* status_messages[] = {
     GENERATE_STATUS_MESSAGE(TREE_OUTPUT_FILE_OPEN_ERROR, "Failed to open output file"),
     GENERATE_STATUS_MESSAGE(TREE_OUTPUT_FILE_WRITE_ERROR, "Failed to write to output file"),
     GENERATE_STATUS_MESSAGE(TREE_OUTPUT_FILE_CLOSE_ERROR, "Failed to close output file"),
-    GENERATE_STATUS_MESSAGE(TREE_INVALID_COUNT, "Invalid objects count")
+    GENERATE_STATUS_MESSAGE(TREE_INVALID_COUNT, "Invalid objects count"),
+    GENERATE_STATUS_MESSAGE(TREE_UNKNOWN_CMD_ARGUMENTS, "Unknown command line arguments")
+
 };
 
 
@@ -93,8 +96,8 @@ static TreeStatus nodeVerify(BinaryTree* tree, Node* node)
 
 TreeStatus treeVerify(BinaryTree* tree)
 {
-    assert(tree);
-    assert(tree->root);
+    assert(tree); assert(tree->root);
+    assert(tree->args.input_file); assert(tree->args.output_file);
 
     TreeStatus status = TREE_OK;
     if (tree->root->parent != NULL)
@@ -121,7 +124,7 @@ static TreeStatus akinatorAddElement(BinaryTree* tree, Node* node, char* new_dat
 {
     assert(tree); assert(node); assert(new_data); assert(different_data);
 
-    TREE_DUMP(tree, TREE_OK, "Before add new object");
+    TREE_VERIFY(tree, "Before adding new object");
 
     TreeStatus status = createNode(&node->left);
     RETURN_IF_NOT_OK(status);
@@ -129,20 +132,21 @@ static TreeStatus akinatorAddElement(BinaryTree* tree, Node* node, char* new_dat
     if (node->left->data == NULL)
         return TREE_OUT_OF_MEMORY;
 
-    TREE_DUMP(tree, TREE_OK, "After add new object");
+    TREE_DUMP(tree, TREE_OK, "After adding new object");
 
     status = createNode(&node->right);
     RETURN_IF_NOT_OK(status);
     node->right->data = node->data;
     node->right->is_dynamic = node->is_dynamic;
 
-    TREE_DUMP(tree, TREE_OK, "After move old object");
+    TREE_DUMP(tree, TREE_OK, "After moving old object");
 
     node->data = strdup(different_data);
     node->is_dynamic = true;
     if (node->data == NULL)
         return TREE_OUT_OF_MEMORY;
 
+    TREE_DUMP(tree, TREE_OK, "After adding differences");
 #ifdef DEBUG
     node->left->parent = node;
     node->right->parent = node;
@@ -158,11 +162,17 @@ static TreeStatus readUserAnswer(char* buffer, int size)
 
     if (fgets(buffer, size, stdin) == NULL)
         return TREE_INPUT_READ_ERROR;
-    buffer[strcspn(buffer, "\n")] = '\0';
+    char* result = strchr(buffer, '\n');
+    if (result != NULL) {
+        *result = '\0';
+    } else {
+        int c = 0;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ;
+    }
 
     return TREE_OK;
 }
-
 
 static TreeStatus processWrongGuess(BinaryTree* tree, Node* node)
 {
@@ -171,7 +181,7 @@ static TreeStatus processWrongGuess(BinaryTree* tree, Node* node)
     char answer_buffer[BUFFER_SIZE] = {};
     char difference_buffer[BUFFER_SIZE] = {};
 
-    printf("What is it?\n");
+    printf("What is this?\n");
     TreeStatus status = readUserAnswer(answer_buffer, BUFFER_SIZE);
     RETURN_IF_NOT_OK(status);
 
@@ -200,9 +210,14 @@ static TreeStatus akinatorGuessing(BinaryTree* tree, Node* node)
 {
     assert(tree); assert(node); assert(node->data);
 
-    char answer_buffer[BUFFER_SIZE] = {};
+    TREE_VERIFY(tree, "Before guessing");
 
-    printf("Maybe it is %s?\n", node->data);
+    if (node->left == NULL && node->right == NULL)
+        printf("Maybe this is %s?\n", node->data);
+    else
+        printf("Is this %s?\n", node->data);
+
+    char answer_buffer[BUFFER_SIZE] = {};
     TreeStatus status = readUserAnswer(answer_buffer, BUFFER_SIZE);
     RETURN_IF_NOT_OK(status);
     
@@ -248,8 +263,7 @@ TreeStatus akinatorStart(BinaryTree* tree)
         if (tree->root->data == NULL)
             return TREE_OUT_OF_MEMORY;
     }
-
-    TREE_VERIFY(tree, "Before launching akinatorGuessing");
+    TREE_VERIFY(tree, "Before starting the akinator");
 
     status = akinatorGuessing(tree, tree->root);
     if (status == TREE_RESTART)
@@ -272,13 +286,18 @@ TreeStatus createNode(Node** node)
 }
 
 
-TreeStatus treeConstructor(BinaryTree* tree)
+TreeStatus treeConstructor(BinaryTree* tree, const int argc, const char** argv)
 {
-    assert(tree != NULL);
+    assert(tree != NULL); assert(argv);
 
     tree->root = NULL;
+    tree->args.input_file = DEFAULT_INPUT_FILE;
+    tree->args.output_file = DEFAULT_OUTPUT_FILE;
 
-    TreeStatus status = treeLoadFromDisk(tree);
+    TreeStatus status = parseArgs(tree, argc, argv);
+    RETURN_IF_NOT_OK(status);
+
+    status = treeLoadFromDisk(tree);
     RETURN_IF_NOT_OK(status);
 
 #ifdef DEBUG
@@ -290,18 +309,18 @@ TreeStatus treeConstructor(BinaryTree* tree)
 }
 
 
-void treeDestructor(BinaryTree* tree)
+TreeStatus treeDestructor(BinaryTree* tree)
 {
-    assert(tree); assert(tree->buffer);
+    assert(tree);
     
-    treeWriteToDisk(tree);
+    TreeStatus status = treeWriteToDisk(tree);
+    RETURN_IF_NOT_OK(status);
 
     if (tree->root == NULL)
-        return;
-
+        return TREE_OK;
     free(tree->buffer); 
     deleteBranch(tree->root);
     tree->root = NULL;
+
+    return TREE_OK;
 }
-
-

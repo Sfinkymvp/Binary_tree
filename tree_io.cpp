@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <errno.h>
 
 
 #include "tree_io.h"
@@ -36,7 +37,7 @@ TreeStatus treeWriteToDisk(BinaryTree* tree)
 {
     TREE_VERIFY(tree, "Before write tree to disk");
 
-    FILE* output_file = fopen("tree_inout", "w");
+    FILE* output_file = fopen(tree->args.output_file, "w");
     if (output_file == NULL)
         return TREE_OUTPUT_FILE_OPEN_ERROR;
 
@@ -63,18 +64,35 @@ static size_t getFileSize(const char* input_filename)
 }
 
 
+static TreeStatus createInputFile(BinaryTree* tree)
+{
+    assert(tree); assert(tree->args.input_file);
+           
+    FILE* input_file = fopen(tree->args.input_file, "w");
+    if (input_file != NULL) {
+        fclose(input_file);
+        return TREE_OK;
+    }
+
+    return TREE_INPUT_FILE_OPEN_ERROR;
+}
+
+
 TreeStatus treeLoadFromDisk(BinaryTree* tree)
 {
-    assert(tree);
+    assert(tree); assert(tree->args.input_file);
 
-    FILE* input_file = fopen("tree_inout", "r");
-    if (input_file == NULL)
+    FILE* input_file = fopen(tree->args.input_file, "r");
+    if (input_file == NULL) {
+        if (errno == ENOENT)
+            return createInputFile(tree);
         return TREE_INPUT_FILE_OPEN_ERROR; 
+    }
 
-    size_t file_size = getFileSize("tree_inout"); 
+    size_t file_size = getFileSize(tree->args.input_file); 
     if (file_size == 0) {
-        fclose(input_file);
-        return TREE_INPUT_FILE_OPEN_ERROR;
+        printf("TREE FILE IS EMPTY. IT WILL BE EMPTY\n");
+        return TREE_OK;
     }
 
     tree->buffer = (char*)calloc(file_size + 1, 1);
@@ -125,11 +143,44 @@ static TreeStatus readTitle(char** destination, char* buffer, int* position)
     int read_len = 0;
     int result = sscanf(buffer + *position, "\"%*[^\"]\"%n", &read_len);
     if (result != 0)
-        return TREE_ERR;
+        return TREE_INPUT_FILE_READ_ERROR;
 
     buffer[*position + read_len - 1] = '\0';
     *destination = buffer + *position + 1;
     *position += read_len;
+
+    return TREE_OK;
+}
+
+
+static TreeStatus parseNode(BinaryTree* tree, Node** node, int* position)
+{
+    assert(tree); assert(tree->buffer); assert(node); assert(position);
+    assert(*node == NULL);
+    
+    RETURN_IF_NOT_OK(status);
+    (*position)++;
+
+    skipWhitespaces(tree->buffer, position);
+
+    status = readTitle(&(*node)->data, tree->buffer, position);
+    (*node)->is_dynamic = false;
+    RETURN_IF_NOT_OK(status);
+
+    skipWhitespaces(tree->buffer, position);
+    status = readNode(tree, &(*node)->left, position);
+    RETURN_IF_NOT_OK(status);
+    if ((*node)->left != NULL)
+        (*node)->left->parent = *node;
+
+    skipWhitespaces(tree->buffer, position);
+    status = readNode(tree, &(*node)->right, position);
+    RETURN_IF_NOT_OK(status);
+    if ((*node)->right != NULL)
+        (*node)->right->parent = *node;
+
+    skipWhitespaces(tree->buffer, position);
+    (*position)++;
 
     return TREE_OK;
 }
@@ -142,45 +193,48 @@ TreeStatus readNode(BinaryTree* tree, Node** node, int* position)
 
     skipWhitespaces(tree->buffer, position);
 
-    for (int index = 0; index < 60; index++)
-        printf("_");
+    for (int index = 0; index < 80; index++)
+        printf("-");
     printf("\n");
 
     printf("%s", tree->buffer + *position);
 
-    TreeStatus status = TREE_OK;
     if (tree->buffer[*position] == '(') {
-        status = createNode(node);
-        RETURN_IF_NOT_OK(status);
-        (*position)++;
-
-        skipWhitespaces(tree->buffer, position);
-
-        status = readTitle(&(*node)->data, tree->buffer, position);
-        (*node)->is_dynamic = false;
-        RETURN_IF_NOT_OK(status);
-
-        skipWhitespaces(tree->buffer, position);
-        status = readNode(tree, &(*node)->left, position);
-        RETURN_IF_NOT_OK(status);
-        if ((*node)->left != NULL)
-            (*node)->left->parent = *node;
-
-        skipWhitespaces(tree->buffer, position);
-        status = readNode(tree, &(*node)->right, position);
-        RETURN_IF_NOT_OK(status);
-        if ((*node)->right != NULL)
-            (*node)->right->parent = *node;
-
-        skipWhitespaces(tree->buffer, position);
-        (*position)++;
-
-        return TREE_OK;
+        return parseNode(tree, node, position);
     } else if (strncmp(&tree->buffer[*position], "nil", 3) == 0) {
         (*position) += 3;
         *node = NULL;
         return TREE_OK;
     }
  
-    return TREE_ERR;
+    return TREE_INPUT_FILE_READ_ERROR;
+}
+
+
+TreeStatus parseArgs(BinaryTree* tree, const int argc, const char** argv)
+{
+    assert(tree); assert(argv);
+
+    for (int index = 1; index < argc; index++) {
+        if (strcmp(argv[index], "-i") == 0) {
+            if (index + 1 < argc && argv[index + 1][0] != '-') {
+                tree->args.input_file = argv[index + 1];
+                index++;
+            } else {
+                return TREE_UNKNOWN_CMD_ARGUMENTS;
+            }
+        }
+        else if (strcmp(argv[index], "-o") == 0) {
+            if (index + 1 < argc && argv[index + 1][0] != '-') {
+                tree->args.output_file = argv[index + 1];
+                index++;
+            } else {
+                return TREE_UNKNOWN_CMD_ARGUMENTS;
+            }
+        } else {
+            return TREE_UNKNOWN_CMD_ARGUMENTS;
+        }
+    }
+
+    return TREE_OK;
 }

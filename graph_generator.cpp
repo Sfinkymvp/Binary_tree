@@ -16,11 +16,15 @@ static void generateNode(Node* node, FILE* graph_file, int rank, int* counter)
 
     fprintf(graph_file, "\tnode_%d [shape=Mrecord, fontname=\"Monospace\", ", id);
                           
-    if (id == 1) fprintf(graph_file, "fillcolor=\"#00FF00\", color=\"#009100\", ");
-    else         fprintf(graph_file, "fillcolor=\"#ACE6AC\", color=\"#608F60\", ");
+    if (id == 1)
+        fprintf(graph_file, "fillcolor=\"#F5B40D\", color=\"#845404\", ");
+    else if (node->left == NULL && node->right == NULL)
+        fprintf(graph_file, "fillcolor=\"#80DBED\", color=\"#1286DF\", ");
+    else
+        fprintf(graph_file, "fillcolor=\"#FCCC94\", color=\"#F87C08\", "); //E47C4C
 
     fprintf(graph_file, "penwidth=2.0, style=filled, label="
-                         "\"{<pointer>%p | %s | {<left>",
+                         "\"{<pointer>%p | '%s' | {<left>",
                         node, node->data);
 
     if (node->left)  fprintf(graph_file, "%p", node->left);
@@ -34,13 +38,13 @@ static void generateNode(Node* node, FILE* graph_file, int rank, int* counter)
     fprintf(graph_file, "}}\"];\n");
 
     if (node->left) {
-        fprintf(graph_file, "\tnode_%d:left -> node_%d:n [rank=%d];\n", 
+        fprintf(graph_file, "\tnode_%d:left -> node_%d:n [rank=%d, label=\"yes\"];\n", 
                 id, *counter + 1, rank);
         generateNode(node->left, graph_file, rank + 1, counter);
     }
 
     if (node->right) {
-        fprintf(graph_file, "\tnode_%d:right -> node_%d:n [rank=%d];\n", 
+        fprintf(graph_file, "\tnode_%d:right -> node_%d:n [rank=%d, label=\"no\"];\n", 
                 id, *counter + 1, rank);
         generateNode(node->right, graph_file, rank + 1, counter);
     }
@@ -56,6 +60,7 @@ void generateGraph(BinaryTree* tree, const char* graph_filename)
     assert(graph_file);
 
     fprintf(graph_file, "digraph Tree {\n");
+    fprintf(graph_file, "\tcharset=\"UTF-8\"\n");
     fprintf(graph_file, "\trankdir=TB\n");
     fprintf(graph_file, "\tgraph[splines=line];\n");
 
