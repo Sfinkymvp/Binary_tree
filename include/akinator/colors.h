@@ -1,5 +1,5 @@
-#ifndef COLORS_H_
-#define COLORS_H_
+#ifndef INCLUDE_AKINATOR_COLORS_H_
+#define INCLUDE_AKINATOR_COLORS_H_
 
 
 #define CYAN_FG    "\033[36m"
@@ -17,4 +17,4 @@
 #define WHITE(text) WHITE_FG text DEFAULT_FG
 
 
-#endif // COLOR_H_
+#endif // INCLUDE_AKINATOR_COLORS_H_

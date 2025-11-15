@@ -1,5 +1,5 @@
-#ifndef _TREE_H_
-#define _TREE_H_
+#ifndef INCLUDE_AKINATOR_TREE_H_
+#define INCLUDE_AKINATOR_TREE_H_
 
 
 #include "./data.h"
@@ -43,6 +43,9 @@
 #define RETURN_IF_NOT_OK(_status) if (_status != TREE_OK) return _status
 
 
+#define RETURN_IF_STACK_ERROR(_status) if (_status != SUCCESS) return TREE_STACK_ERROR
+
+
 void printStatusMessage(TreeStatus status);
 
 
@@ -64,4 +67,4 @@ TreeStatus treeConstructor(BinaryTree* tree, const int argc, const char** argv);
 void treeDestructor(BinaryTree* tree);
 
 
-#endif // _TREE_H_
+#endif // INCLUDE_AKINATOR_TREE_H_

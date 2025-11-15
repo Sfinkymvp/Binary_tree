@@ -1,5 +1,5 @@
-#ifndef _STACK_DATA_H_
-#define _STACK_DATA_H_
+#ifndef INCLUDE_STACK_DATA_H_
+#define INCLUDE_STACK_DATA_H_
 
 
 #include "../akinator/tree.h"
@@ -88,4 +88,4 @@ typedef struct {
 } Stack_t;
 
 
-#endif // _STACK_DATA_H_
+#endif // INCLUDE_STACK_DATA_H_

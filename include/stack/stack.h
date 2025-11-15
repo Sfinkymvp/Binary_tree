@@ -1,5 +1,5 @@
-#ifndef _STACK_H_
-#define _STACK_H_
+#ifndef INCLUDE_STACK_STACK_H_
+#define INCLUDE_STACK_STACK_H_
 
 
 #include "./data.h"
@@ -52,4 +52,4 @@ StackError stackPush(Stack_t* stack, Element_t value);
 StackError stackPop(Stack_t* stack, Element_t* value);
 
 
-#endif // _STACK_H_
+#endif // INCLUDE_STACK_STACK_H_

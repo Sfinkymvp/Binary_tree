@@ -1,5 +1,5 @@
-#ifndef _STACK_ERROR_H_
-#define _STACK_ERROR_H_
+#ifndef INCLUDE_STACK_ERROR_H_
+#define INCLUDE_STACK_ERROR_H_
 
 
 #include "./data.h"
@@ -93,4 +93,4 @@ void printStackData(const Stack_t* stack);
 #endif // DEBUG
 
 
-#endif // _STACK_ERROR_H_
+#endif // INCLUDE_STACK_ERROR_H_

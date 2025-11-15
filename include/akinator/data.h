@@ -14,7 +14,7 @@ extern const char* DEFAULT_OUTPUT_FILE;
 
 typedef enum {
     TREE_OK = 0,
-    TREE_RESTART,
+    TREE_STACK_ERROR,
     TREE_NOT_FOUND,
     TREE_NULL_DATA_POINTER,
     TREE_ROOT_HAS_PARENT,

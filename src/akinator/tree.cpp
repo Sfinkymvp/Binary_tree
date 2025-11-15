@@ -15,7 +15,7 @@ const char* DEFAULT_OUTPUT_FILE = "../data/akinator_tree";
 
 const char* status_messages[] = {
     GENERATE_STATUS_MESSAGE(TREE_OK, "Tree is valid"),
-    GENERATE_STATUS_MESSAGE(TREE_RESTART, "Akinator will be restarted"),
+    GENERATE_STATUS_MESSAGE(TREE_STACK_ERROR, "An error occured in the stack"),
     GENERATE_STATUS_MESSAGE(TREE_NOT_FOUND, "Object is not in the tree"),
     GENERATE_STATUS_MESSAGE(TREE_NULL_DATA_POINTER, "Node data is NULL"),
     GENERATE_STATUS_MESSAGE(TREE_ROOT_HAS_PARENT, "Root node has parent (must be NULL)"),
