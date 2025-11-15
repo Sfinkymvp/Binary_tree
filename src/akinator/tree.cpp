@@ -123,42 +123,6 @@ TreeStatus treeVerify(BinaryTree* tree)
 }
 
 
-static TreeStatus akinatorAddElement(BinaryTree* tree, Node* node, char* new_data, char* different_data)
-{
-    assert(tree); assert(node); assert(new_data); assert(different_data);
-
-    TREE_VERIFY(tree, "Before adding new object");
-
-    TreeStatus status = createNode(&node->left);
-    RETURN_IF_NOT_OK(status);
-    node->left->data = strdup(new_data);
-    if (node->left->data == NULL)
-        return TREE_OUT_OF_MEMORY;
-
-    TREE_DUMP(tree, TREE_OK, "After adding new object");
-
-    status = createNode(&node->right);
-    RETURN_IF_NOT_OK(status);
-    node->right->data = node->data;
-    node->right->is_dynamic = node->is_dynamic;
-
-    TREE_DUMP(tree, TREE_OK, "After moving old object");
-
-    node->data = strdup(different_data);
-    node->is_dynamic = true;
-    if (node->data == NULL)
-        return TREE_OUT_OF_MEMORY;
-
-    TREE_DUMP(tree, TREE_OK, "After adding differences");
-#ifdef DEBUG
-    node->left->parent = node;
-    node->right->parent = node;
-#endif // DEBUG
-
-    return TREE_OK;
-}
-
-
 TreeStatus readUserAnswer(char* buffer, int size)
 {
     assert(buffer);
@@ -182,10 +146,60 @@ TreeStatus readUserAnswer(char* buffer, int size)
 }
 
 
-static TreeStatus processWrongGuess(BinaryTree* tree, Node* node)
+TreeStatus createNode(Node** node)
+{
+    assert(node);
+
+    *node = (Node*)calloc(1, sizeof(Node));
+    if (*node == NULL)
+        return TREE_OUT_OF_MEMORY;
+    (*node)->is_dynamic = true;
+
+    return TREE_OK;
+}
+
+
+static TreeStatus akinatorAddElement(BinaryTree* tree, Node* node, char* new_data, char* different_data)
+{
+    assert(tree); assert(node); assert(new_data); assert(different_data);
+
+    TREE_VERIFY(tree, "Add new object");
+
+    TreeStatus status = createNode(&node->left);
+    RETURN_IF_NOT_OK(status);
+    node->left->data = strdup(new_data);
+    if (node->left->data == NULL)
+        return TREE_OUT_OF_MEMORY;
+
+    //TREE_DUMP(tree, TREE_OK, "After adding new object");
+
+    status = createNode(&node->right);
+    RETURN_IF_NOT_OK(status);
+    node->right->data = node->data;
+    node->right->is_dynamic = node->is_dynamic;
+
+    //TREE_DUMP(tree, TREE_OK, "After moving old object");
+
+    node->data = strdup(different_data);
+    node->is_dynamic = true;
+    if (node->data == NULL)
+        return TREE_OUT_OF_MEMORY;
+
+    TREE_DUMP(tree, TREE_OK, "After Adding new object");
+#ifdef DEBUG
+    node->left->parent = node;
+    node->right->parent = node;
+#endif // DEBUG
+
+    return TREE_OK;
+}
+
+
+static TreeStatus akinatorProcessWrongGuess(BinaryTree* tree, Node* node)
 {
     assert(tree); assert(node);
 
+    TREE_VERIFY(tree, "Before processing a new object");
     char answer_buffer[BUFFER_SIZE] = {};
     char difference_buffer[BUFFER_SIZE] = {};
 
@@ -215,11 +229,9 @@ static TreeStatus processWrongGuess(BinaryTree* tree, Node* node)
 }
 
 
-static TreeStatus akinatorGuessing(BinaryTree* tree, Node* node)
+static TreeStatus akinatorProcessGuessing(BinaryTree* tree, Node* node)
 {
     assert(tree); assert(node); assert(node->data);
-
-    TREE_VERIFY(tree, "Before guessing");
 
     if (node->left == NULL && node->right == NULL)
         printf("Maybe this is %s?\n", node->data);
@@ -235,37 +247,19 @@ static TreeStatus akinatorGuessing(BinaryTree* tree, Node* node)
             printf(GREEN("Akinator guessed right!\n"));
             return TREE_OK;
         } else {
-            return akinatorGuessing(tree, node->left);
+            return akinatorProcessGuessing(tree, node->left);
         }
     } else {
         if (node->right == NULL) {
-            return processWrongGuess(tree, node);
+            return akinatorProcessWrongGuess(tree, node);
         } else {
-            return akinatorGuessing(tree, node->right);
+            return akinatorProcessGuessing(tree, node->right);
         }
     }
 }
 
 
-static void deleteBranch(Node* node)
-{
-    assert(node); assert(node->data);
-
-    if (node->left) {
-        deleteBranch(node->left);
-        node->left = NULL;
-    }
-    if (node->right) {
-        deleteBranch(node->right);
-        node->right = NULL;
-    }
-    if (node->is_dynamic)
-        free(node->data);
-    free(node);
-}
-
-
-TreeStatus akinatorStart(BinaryTree* tree)
+TreeStatus akinatorGuess(BinaryTree* tree)
 {
     assert(tree);
 
@@ -279,23 +273,11 @@ TreeStatus akinatorStart(BinaryTree* tree)
         if (tree->root->data == NULL)
             return TREE_OUT_OF_MEMORY;
     }
-    TREE_VERIFY(tree, "Before starting the akinator");
 
-    status = akinatorGuessing(tree, tree->root);
+    TREE_VERIFY(tree, "Start the akinator");
+
+    status = akinatorProcessGuessing(tree, tree->root);
     return status;
-}
-
-
-TreeStatus createNode(Node** node)
-{
-    assert(node);
-
-    *node = (Node*)calloc(1, sizeof(Node));
-    if (*node == NULL)
-        return TREE_OUT_OF_MEMORY;
-    (*node)->is_dynamic = true;
-
-    return TREE_OK;
 }
 
 
@@ -323,11 +305,29 @@ TreeStatus treeConstructor(BinaryTree* tree, const int argc, const char** argv)
 }
 
 
+static void deleteBranch(Node* node)
+{
+    assert(node); assert(node->data);
+
+    if (node->left) {
+        deleteBranch(node->left);
+        node->left = NULL;
+    }
+    if (node->right) {
+        deleteBranch(node->right);
+        node->right = NULL;
+    }
+    if (node->is_dynamic)
+        free(node->data);
+    free(node);
+}
+
+
 void treeDestructor(BinaryTree* tree)
 {
     assert(tree);
-
     assert(tree->debug.dump.file);
+
     fclose(tree->debug.dump.file);
     tree->debug.dump.file = NULL;
 

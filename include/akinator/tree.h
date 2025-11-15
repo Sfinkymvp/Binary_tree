@@ -52,10 +52,10 @@ TreeStatus treeVerify(BinaryTree* tree);
 TreeStatus readUserAnswer(char* buffer, int size);
 
 
-TreeStatus akinatorStart(BinaryTree* tree);
-
-
 TreeStatus createNode(Node** node);
+
+
+TreeStatus akinatorGuess(BinaryTree* tree);
 
 
 TreeStatus treeConstructor(BinaryTree* tree, const int argc, const char** argv);

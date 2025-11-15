@@ -16,9 +16,9 @@ static void generateNode(Node* node, FILE* graph_file, int rank, int* counter)
 
     fprintf(graph_file, "\tnode_%d [shape=Mrecord, fontname=\"Monospace\", ", id);
                           
-    if (id == 1)
-        fprintf(graph_file, "fillcolor=\"#F5B40D\", color=\"#845404\", ");
-    else if (node->left == NULL && node->right == NULL)
+    //if (id == 1)
+    //   fprintf(graph_file, "fillcolor=\"#F5B40D\", color=\"#845404\", ");
+    /* else */ if (node->left == NULL && node->right == NULL)
         fprintf(graph_file, "fillcolor=\"#80DBED\", color=\"#1286DF\", ");
     else
         fprintf(graph_file, "fillcolor=\"#FCCC94\", color=\"#F87C08\", "); //E47C4C

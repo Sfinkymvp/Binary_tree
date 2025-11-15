@@ -38,7 +38,7 @@ static void writeTreeInfo(BinaryTree* tree, DumpInfo* info)
     fprintf(tree->debug.dump.file, "\t<h2>Tree \"%s\" {%s:%d} created in %s()</h2>\n",
             tree->debug.creation.name, tree->debug.creation.file,
             tree->debug.creation.line, tree->debug.creation.function);
-    fprintf(tree->debug.dump.file, "\t<h3>ERROR:   %s</h3>\n", status_messages[info->status]);
+    fprintf(tree->debug.dump.file, "\t<h3>STATUS:   %s</h3>\n", status_messages[info->status]);
     fprintf(tree->debug.dump.file, "\t<h3>MESSAGE: %s</h3>\n", info->message);
 }
 
@@ -97,7 +97,7 @@ void treeDump(BinaryTree* tree, TreeStatus status, const char* file,
 
     char command[BUFFER_SIZE * 3] = {};
     snprintf(command, BUFFER_SIZE * 3, "rm %s", graph_dot_file);
-    //system(command);
+    system(command);
 
     createHtmlDump(tree, &info, graph_svg_file);
 

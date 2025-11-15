@@ -95,9 +95,10 @@ TreeStatus akinatorCompare(BinaryTree* tree)
 TreeStatus processUserChoice(BinaryTree* tree, UserChoice choice)
 {
     assert(tree);
+    TREE_VERIFY(tree, "Pre-process check");
 
     switch (choice) {
-        case CHOICE_GUESS:        return akinatorStart(tree);
+        case CHOICE_GUESS:        return akinatorGuess(tree);
         case CHOICE_DEFINE:       return akinatorDefine(tree);
         case CHOICE_COMPARE:      return akinatorCompare(tree);
         case CHOICE_EXIT_SAVE:    return treeWriteToDisk(tree);
